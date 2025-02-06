@@ -1,5 +1,8 @@
 """  Scam Website Detection Site Capture
-
+    In order to train a CNN based on image recognition of fraudulent and scam websites,
+    images of the entire site must be gathered in full so that they can be used for training.
+    Manually going through every single website would take an inordinate amount of time, thus
+    programming Selenium to take the screenshots is the optimal path.
 
     Author: Josh Stanton
     Date: February 06, 2025
@@ -12,6 +15,7 @@ import glob # used for UNIX style path-name
 from selenium import webdriver
 from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.firefox_profile import FirefoxProfile # Used to remove securities, only use when contained
 from webdriver_manager.firefox import GeckoDriverManager
 
 
@@ -61,13 +65,34 @@ def acquire_screenshot(url: str, url_index: int):
       -------
       A .png file of the screenshot taken.
       """
+    ''' ONLY USE WITHIN A VM FOR SAFETY
+    
+    profile = FirefoxProfile()
+    profile.set_preference("security.insecure_field_warning.contextual.enabled", False) # [6]
+    profile.set_preference("browser.safebrowsing.malware.enabled", False)
+    profile.set_preference("browser.safebrowsing.phishing.enabled", False)
+    profile.set_preference("security.ssl.enable_ocsp_stapling", False)
+    profile.set_preference("security.OCSP.enabled", 0)
+    profile.set_preference("security.ssl.errorReporting.automatic", False)
+    profile.set_preference("security.ssl.errorReporting.enabled", False)
+    profile.set_preference("security.ssl.errorReporting.url", "")
+    profile.set_preference("security.ssl.require_safe_negotiation", False)
+    profile.set_preference("security.mixed_content.block_active_content", False)
+    profile.set_preference("security.mixed_content.block_display_content", False)
+    profile.set_preference("network.stricttransportsecurity.preloadlist", False)
+    profile.set_preference("network.stricttransportsecurity.enabled", False)
+    profile.set_preference("network.http.phishy-userpass-length", 255)
+    profile.set_accept_untrusted_certs(True)
+    profile.set_assume_untrusted_certificate_issuer(False)
+    
+    '''
     options = Options()
     options.add_argument("--headless")
     driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=options)
     # launches the website URL in the driver
     driver.get(url)
-    # sets an implicit wait time of 15 seconds to allow for the webpage to load fully
-    driver.implicitly_wait(15)
+    # sets an implicit wait time of 30 seconds to allow for the webpage to load fully
+    driver.implicitly_wait(30)
     # set the page sizing using the JavaScript command to capture the full webpage
     full_page = driver.execute_script("return document.body.scrollHeight")
     driver.set_window_size(1920, full_page)
@@ -77,12 +102,8 @@ def acquire_screenshot(url: str, url_index: int):
     driver.quit()
 
 
-acquire_screenshot("https://urlbox.com/website-screenshots-python",1)
-
-'''
 for index, row in scam_sites.iterrows():
     labels = ['URL']
     for label in labels:
         acquire_screenshot(row[label], index)
 
-'''
