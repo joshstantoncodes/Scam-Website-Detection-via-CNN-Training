@@ -68,7 +68,7 @@ def acquire_screenshot(url: str, url_index: int):
     ''' ONLY USE WITHIN A VM FOR SAFETY
     
     profile = FirefoxProfile()
-    profile.set_preference("security.insecure_field_warning.contextual.enabled", False) # [6]
+    profile.set_preference("security.insecure_field_warning.contextual.enabled", False)
     profile.set_preference("browser.safebrowsing.malware.enabled", False)
     profile.set_preference("browser.safebrowsing.phishing.enabled", False)
     profile.set_preference("security.ssl.enable_ocsp_stapling", False)
