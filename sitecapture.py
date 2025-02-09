@@ -90,16 +90,20 @@ def acquire_screenshot(url: str, url_index: int):
     options.add_argument("--headless")
     driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=options)
     # launches the website URL in the driver
-    driver.get(url)
-    # sets an implicit wait time of 30 seconds to allow for the webpage to load fully
-    driver.implicitly_wait(30)
-    # set the page sizing using the JavaScript command to capture the full webpage
-    full_page = driver.execute_script("return document.body.scrollHeight")
-    driver.set_window_size(1920, full_page)
-    driver.save_full_page_screenshot(
+    try:
+        driver.get(url)
+        # sets an implicit wait time of 30 seconds to allow for the webpage to load fully
+        driver.implicitly_wait(30)
+        # set the page sizing using the JavaScript command to capture the full webpage
+        full_page = driver.execute_script("return document.body.scrollHeight")
+        driver.set_window_size(1920, full_page)
+        driver.save_full_page_screenshot(
         os.path.join(r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Scam Site Captures",
                                                   f"screenshot_{url_index}.png"))
-    driver.quit()
+    except Exception as e:
+        print(f"Error capturing {url} as website may have already been taken down or the domain has changed: {e}")
+    finally:
+        driver.quit()
 
 
 for index, row in scam_sites.iterrows():
