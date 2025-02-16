@@ -65,8 +65,8 @@ def acquire_screenshot(url: str, url_index: int):
       -------
       A .png file of the screenshot taken.
       """
-    ''' ONLY USE WITHIN A VM FOR SAFETY
-    
+
+    '''
     profile = FirefoxProfile()
     profile.set_preference("security.insecure_field_warning.contextual.enabled", False)
     profile.set_preference("browser.safebrowsing.malware.enabled", False)
@@ -82,10 +82,8 @@ def acquire_screenshot(url: str, url_index: int):
     profile.set_preference("network.stricttransportsecurity.preloadlist", False)
     profile.set_preference("network.stricttransportsecurity.enabled", False)
     profile.set_preference("network.http.phishy-userpass-length", 255)
-    profile.set_accept_untrusted_certs(True)
-    profile.set_assume_untrusted_certificate_issuer(False)
-    
     '''
+
     options = Options()
     options.add_argument("--headless")
     driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=options)
