@@ -11,16 +11,20 @@
 import pandas as pd
 #import numpy as np
 import os
+
 import glob # used for UNIX style path-name
 from selenium import webdriver
 from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile # Used to remove securities, only use when contained
 from webdriver_manager.firefox import GeckoDriverManager
+import requests
+from urllib3.exceptions import NameResolutionError, MaxRetryError, HTTPError
 
 
 # Using the absolute file path of the Scam Websites Folder, collects all the .csv files into a single DataFrame
 file_path = r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Scam Websites"
+legitimate = r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Legitimate Websites"
 
 def load_data(filepath: str) -> pd.DataFrame:
     """
@@ -45,6 +49,7 @@ def load_data(filepath: str) -> pd.DataFrame:
     return data
 
 scam_sites = load_data(file_path)
+legit_sites = load_data(legitimate)
 
 def acquire_screenshot(url: str, url_index: int):
     """
@@ -86,7 +91,8 @@ def acquire_screenshot(url: str, url_index: int):
 
     options = Options()
     options.add_argument("--headless")
-    driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()), options=options)
+    service = FirefoxService(GeckoDriverManager().install())
+    driver = webdriver.Firefox(service=service, options=options)
     # launches the website URL in the driver
     try:
         driver.get(url)
@@ -96,7 +102,7 @@ def acquire_screenshot(url: str, url_index: int):
         full_page = driver.execute_script("return document.body.scrollHeight")
         driver.set_window_size(1920, full_page)
         driver.save_full_page_screenshot(
-        os.path.join(r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Scam Site Captures",
+        os.path.join(r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Legitimate Captures",
                                                   f"screenshot_{url_index}.png"))
     except Exception as e:
         print(f"Error capturing {url} as website may have already been taken down or the domain has changed: {e}")
@@ -104,8 +110,73 @@ def acquire_screenshot(url: str, url_index: int):
         driver.quit()
 
 
+def evaluate_URL(URL: str) -> bool:
+    """
+      To prevent issues arising during the screenshot acquisition, first assess if the URL is still active
+      by sending an HTTP request, and to prevent reaching HTTP Request limits, set a request limit first.
+
+      Parameters
+      ----------
+      URL : str
+          The full URL of a website to send an HTTP request to.
+
+      Returns
+      -------
+      True if the HTTP request was successfully received, understood, and accepted.
+      False, otherwise
+      """
+    try:
+        req = requests.Request('GET', URL)
+        r = req.prepare()
+        session = requests.Session()
+        adapter = requests.adapters.HTTPAdapter(max_retries=3)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)
+        response = session.send(r)
+        status = response.status_code
+
+        if status == 200:
+            return True
+
+    except NameResolutionError as e:
+        print(f'DNS resolution failed: {e}')
+        return False
+
+    except MaxRetryError as e:
+        print(f'Max retries exceeded: {e}')
+        return False
+
+    except ConnectionError as e:
+        print(f'Connection error: {e}')
+        return False
+
+    except HTTPError as e:
+        print(f'HTTPError: {e}')
+
+    except Exception as e:
+        print(f'An error occurred: {e}')
+        return False
+
+
+'''
 for index, row in scam_sites.iterrows():
     labels = ['URL']
     for label in labels:
-        acquire_screenshot(row[label], index)
+        if evaluate_URL(row[label]):
+            print(f'{index}) Acquiring screenshot from {row[label]}')
+            acquire_screenshot(row[label], index)
+            print(f'{index} done.')
+        else:
+            continue
+'''
+for index, row in legit_sites.iterrows():
+    labels = ['URL']
+    for label in labels:
+        if index > 122:
+            if evaluate_URL(row[label]):
+                print(f'{index}) Acquiring screenshot from {row[label]}')
+                acquire_screenshot(row[label], index)
+                print(f'{index} done.')
+            else:
+                continue
 
