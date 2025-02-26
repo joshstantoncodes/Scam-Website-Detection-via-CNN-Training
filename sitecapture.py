@@ -19,6 +19,7 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile # Used to remove securities, only use when contained
 from webdriver_manager.firefox import GeckoDriverManager
 import requests
+from requests.auth import HTTPBasicAuth
 from urllib3.exceptions import NameResolutionError, MaxRetryError, HTTPError
 
 
@@ -130,7 +131,7 @@ def evaluate_URL(URL: str) -> bool:
         r = req.prepare()
         session = requests.Session()
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
-        session.mount('http://', adapter)
+        session.mount('http://', adapter, )
         session.mount('https://', adapter)
         response = session.send(r)
         status = response.status_code
@@ -172,7 +173,7 @@ for index, row in scam_sites.iterrows():
 for index, row in legit_sites.iterrows():
     labels = ['URL']
     for label in labels:
-        if index > 122:
+        if index > 349:
             if evaluate_URL(row[label]):
                 print(f'{index}) Acquiring screenshot from {row[label]}')
                 acquire_screenshot(row[label], index)
