@@ -173,7 +173,7 @@ for index, row in scam_sites.iterrows():
 for index, row in legit_sites.iterrows():
     labels = ['URL']
     for label in labels:
-        if index > 349:
+        if index > 867:
             if evaluate_URL(row[label]):
                 print(f'{index}) Acquiring screenshot from {row[label]}')
                 acquire_screenshot(row[label], index)
