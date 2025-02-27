@@ -9,23 +9,24 @@
 """
 
 import pandas as pd
-#import numpy as np
+# import numpy as np
 import os
 
-import glob # used for UNIX style path-name
+import glob  # used for UNIX style path-name
 from selenium import webdriver
 from selenium.webdriver.firefox.service import Service as FirefoxService
 from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.firefox.firefox_profile import FirefoxProfile # Used to remove securities, only use when contained
+from selenium.webdriver.firefox.firefox_profile import \
+    FirefoxProfile  # Used to remove securities, only use when contained
 from webdriver_manager.firefox import GeckoDriverManager
 import requests
 from requests.auth import HTTPBasicAuth
 from urllib3.exceptions import NameResolutionError, MaxRetryError, HTTPError
 
-
 # Using the absolute file path of the Scam Websites Folder, collects all the .csv files into a single DataFrame
 file_path = r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Scam Websites"
 legitimate = r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Legitimate Websites"
+
 
 def load_data(filepath: str) -> pd.DataFrame:
     """
@@ -49,8 +50,10 @@ def load_data(filepath: str) -> pd.DataFrame:
     data = pd.concat(files, axis=0, ignore_index=True)
     return data
 
+
 scam_sites = load_data(file_path)
 legit_sites = load_data(legitimate)
+
 
 def acquire_screenshot(url: str, url_index: int):
     """
@@ -103,8 +106,9 @@ def acquire_screenshot(url: str, url_index: int):
         full_page = driver.execute_script("return document.body.scrollHeight")
         driver.set_window_size(1920, full_page)
         driver.save_full_page_screenshot(
-        os.path.join(r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Legitimate Websites\Legitimate Captures",
-                                                  f"screenshot_{url_index}.png"))
+            os.path.join(
+                r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Legitimate Websites\Legitimate Captures",
+                f"screenshot_{url_index}.png"))
     except Exception as e:
         print(f"Error capturing {url} as website may have already been taken down or the domain has changed: {e}")
     finally:
@@ -180,5 +184,4 @@ for index, row in legit_sites.iterrows():
                 print(f'{index} done.')
             else:
                 continue
-            #'''
-
+            # '''
