@@ -103,7 +103,7 @@ def acquire_screenshot(url: str, url_index: int):
         full_page = driver.execute_script("return document.body.scrollHeight")
         driver.set_window_size(1920, full_page)
         driver.save_full_page_screenshot(
-        os.path.join(r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Legitimate Captures",
+        os.path.join(r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Legitimate Websites\Legitimate Captures",
                                                   f"screenshot_{url_index}.png"))
     except Exception as e:
         print(f"Error capturing {url} as website may have already been taken down or the domain has changed: {e}")
@@ -173,11 +173,12 @@ for index, row in scam_sites.iterrows():
 for index, row in legit_sites.iterrows():
     labels = ['URL']
     for label in labels:
-        if index > 867:
+        if index > 1357:
             if evaluate_URL(row[label]):
                 print(f'{index}) Acquiring screenshot from {row[label]}')
                 acquire_screenshot(row[label], index)
                 print(f'{index} done.')
             else:
                 continue
+            #'''
 
