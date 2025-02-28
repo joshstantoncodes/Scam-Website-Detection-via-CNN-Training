@@ -117,13 +117,17 @@ def uniform_sizing_via_filepath(filepath: str):
         full_path = os.path.join(filepath, file)
         img = cv.imread(full_path)
         height, width = img.shape[:2]
-        pad_top = max(0, (desired_height - height) // 2)
-        pad_bottom = max(0, desired_height - height - pad_top)
-        pad_left = max(0, (desired_width - width) // 2)
-        pad_right = max(0, desired_width - width - pad_left)
-        resized_image = cv.resize(img, (desired_height, desired_width))
-        resized_image = cv.copyMakeBorder(resized_image, pad_top, pad_bottom, pad_left, pad_right, cv.BORDER_CONSTANT)
-        images.append(resized_image)
+        scale = min(desired_height / height, desired_width / width)
+
+        new_height = int(height * scale)
+        new_width = int(width * scale)
+        resized_image = cv.resize(img, (new_width, new_height))
+        pad_top = (desired_height - new_height) // 2
+        pad_bottom = desired_height - new_height - pad_top
+        pad_left = (desired_width - new_width) // 2
+        pad_right = desired_width - new_width - pad_left
+        padded_resized_image = cv.copyMakeBorder(resized_image, pad_top, pad_bottom, pad_left, pad_right, cv.BORDER_CONSTANT)
+        images.append(padded_resized_image)
     return images
 
 
@@ -143,7 +147,5 @@ scam_sobel_out = r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CN
 # gaussian_sobel_images(legitimate_full_batch_path,legit_sobel_out)
 
 
-small = uniform_sizing_via_filepath(legitimate_small_batch_path)
 
-for x in small:
-    print(x.shape)
+
