@@ -6,13 +6,8 @@
 """
 from matplotlib import pyplot as plt
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_score, classification_report
-from sklearn.model_selection import KFold, train_test_split
-from tensorflow.python.ops.gen_uniform_quant_ops import uniform_quantized_clip_by_value
-
+from sklearn.model_selection import train_test_split, GridSearchCV
 from imageTransformation import load_images, gaussian_sobel_images, uniform_sizing_via_filepath
-import cv2 as cv
-import sklearn
-import math
 import seaborn as sns
 import pandas as pd
 import numpy as np
@@ -22,28 +17,28 @@ from tensorflow.python.keras.backend import epsilon
 # PyCharm doesn't seem to like Keras but this works to import tensorflow.keras.layers
 keras = tf.keras
 KL = keras.layers
+KW = keras.wrappers
 
 
 # Loading all PNG files in a single run is extremely memory intensive and time-consuming,
 scam_full_batch_path = r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Training Data\Scam Websites\Scam Site Captures"
 scam_small_batch_path = r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Training Data\Scam Websites\Scam Sites Small Batch"
+sobel_scam_full_batch_path = r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Training Data\Scam Websites\Scam Site Sobel Transformed"
+
 
 # for the time being, while still building, using a smaller batch would be better.
 legitimate_full_batch_path = r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Training Data\Legitimate Websites\Legitimate Captures"
 legitimate_small_batch_path = r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Training Data\Legitimate Websites\Legitimate Site Small Batch"
-
+sobel_legitimate_full_batch_path = r"C:\Users\joshs\Documents\GitHub\Scam-Website-Detection-via-CNN-Training\Training Data\Legitimate Websites\Legitimate Sobel Transformed"
 
 '''
 The Convolutional Neural Network Model implements three Convolutional Building Blocks
 as described in An Introduction to Image Classification by Klaus D. Toennies. Each Block
 of the model consists of three batches of 64 3x3 filters followed by MaxPooling which reduces
 spatial resolution. Normalization was also included to prevent overfitting. The final two layers
-of the model are used to refine features and provide prediction via the softmax activation. 
+of the model are used to refine features and provide prediction via the sigmoid activation. 
 
 '''
-
-
-
 model = keras.Sequential([
     KL.Conv2D(64, (3, 3), activation='relu'),
     KL.Conv2D(64, (3, 3), activation='relu'),
@@ -85,49 +80,45 @@ model = keras.Sequential([
     ),
     KL.Flatten(),
     KL.Dense(64, activation='relu'),
-    KL.Dense(2, activation='softmax')
+    KL.Dense(1, activation='sigmoid')
 ])
 
 model.compile(optimizer='adam',
-              loss='categorical_crossentropy',
+              loss='binary_crossentropy',
               metrics=['accuracy'])
 
 start_time = time.time()
 
-scam_images = uniform_sizing_via_filepath(scam_small_batch_path)
-legit_images = uniform_sizing_via_filepath(legitimate_small_batch_path)
+# Collect all of the images in a uniform size
+scam_images = uniform_sizing_via_filepath(scam_full_batch_path)
+legit_images = uniform_sizing_via_filepath(legitimate_full_batch_path)
 
+
+# Convert to an np.array for training split
 scam_images = np.array(scam_images)
 legit_images = np.array(legit_images)
 
-scam_images = tf.data.Dataset.from_tensor_slices(scam_images)
-legit_images = tf.data.Dataset.from_tensor_slices(legit_images)
+# assign labels for each of the groups.
+scam_labels = np.zeros(len(scam_images))
+legit_labels = np.ones(len(legit_images))
 
-scam_images = scam_images.batch(64)
-legit_images = legit_images.batch(64)
+# add the labels to the data
+all_images = np.concatenate([scam_images, legit_images], axis=0)
+all_labels = np.concatenate([scam_labels, legit_labels], axis=0)
 
+scam_train, scam_test, legit_train, legit_test = train_test_split(all_images, all_labels, test_size=0.2, random_state=42)
 
-scam_train, scam_test, legit_train, legit_test = train_test_split(scam_images, legit_images, random_state=104, test_size=0.2, shuffle=True)
-'''
-kf = KFold(n_splits=5, shuffle=True, random_state=104)
-for train_index, test_index in kf.split(X_untransformed):
-    scam_train, scam_test = scam_images.iloc[train_index], scam_images.iloc[test_index]
-    legit_train, legit_test = legit_images.iloc[train_index], legit_images.iloc[test_index]
-'''
+scam_train = scam_train.astype("float32") / 255.0
+scam_test = scam_test.astype("float32") / 255.0
 
 
-# reshape the tensors to a single tensor for the model to fit properly.
-'''
-scam_train = tf.reshape(scam_train, [-1])
-scam_test = tf.reshape(scam_test, [-1])
-legit_train = tf.reshape(legit_train, [-1])
-legit_test = tf.reshape(legit_test, [-1])
-'''
-scam_train = tf.uniform(32, 1080, 1920, 3)
+# Trying  to run on a batch size of 32 exceeds RAM capabilities for this device.
+model.fit(scam_train, legit_train, epochs=10, batch_size=8)
 
-model.fit(scam_train, legit_train, epochs=25)
 legit_pred = model.predict(scam_test)
+legit_pred = (legit_pred >= 0.5).astype(int).flatten()
 
+model.summary()
 accuracy = accuracy_score(legit_test, legit_pred)
 print("Model Accuracy:", accuracy)
 print("\nClassification Report:\n", classification_report(legit_test, legit_pred))
@@ -141,10 +132,55 @@ plt.show()
 
 end_time = time.time()
 
+print(f'First Model Time Elapse: {end_time-start_time}s')
 
-print(f'Time Elapse: {end_time-start_time}s')
+
+######## MODEL 2 SOBEL TRANSFORMED
+
+start_time = time.time()
+# Collect all of the images in a uniform size
+scam_images = uniform_sizing_via_filepath(sobel_scam_full_batch_path)
+legit_images = uniform_sizing_via_filepath(sobel_legitimate_full_batch_path)
+
+# Convert to an np.array for training split
+scam_images = np.array(scam_images)
+legit_images = np.array(legit_images)
+
+# assign labels for each of the groups.
+scam_labels = np.zeros(len(scam_images))
+legit_labels = np.ones(len(legit_images))
+
+# add the labels to the data
+all_images = np.concatenate([scam_images, legit_images], axis=0)
+all_labels = np.concatenate([scam_labels, legit_labels], axis=0)
+
+scam_train, scam_test, legit_train, legit_test = train_test_split(all_images, all_labels, test_size=0.2, random_state=42)
+
+scam_train = scam_train.astype("float32") / 255.0
+scam_test = scam_test.astype("float32") / 255.0
 
 
+# Trying  to run on a batch size of 32 exceeds RAM capabilities for this device.
+model.fit(scam_train, legit_train, epochs=10, batch_size=8)
+
+legit_pred = model.predict(scam_test)
+legit_pred = (legit_pred >= 0.5).astype(int).flatten()
+
+model.summary()
+accuracy = accuracy_score(legit_test, legit_pred)
+print("Model Accuracy:", accuracy)
+print("\nClassification Report:\n", classification_report(legit_test, legit_pred))
+
+
+cm = confusion_matrix(legit_test, legit_pred)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+print('Prediction on test data:\n')
+disp.plot()
+plt.show()
+
+end_time = time.time()
+
+print(f'Second Model Time Elapse: {end_time-start_time}s')
 
 
 

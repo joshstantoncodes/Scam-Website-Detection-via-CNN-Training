@@ -108,7 +108,7 @@ def uniform_sizing_via_filepath(filepath: str):
       Uniformly resized images.
       """
     # let's try the most common website dimensions at the moment
-    desired_height, desired_width = 1920, 1080
+    desired_height, desired_width = 960, 540
     images = []
     # collect all PNG files in the directory
     img_files = [files for files in os.listdir(filepath) if files.endswith('.png')]
