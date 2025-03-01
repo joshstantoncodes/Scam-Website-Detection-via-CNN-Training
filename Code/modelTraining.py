@@ -52,7 +52,7 @@ model = keras.Sequential([
         beta_initializer='zeros',
         gamma_initializer='ones'
     ),
-    #KL.Dropout(0.25),
+    KL.Dropout(0.25),
     KL.Conv2D(64, (3, 3), activation='relu'),
     KL.Conv2D(64, (3, 3), activation='relu'),
     KL.Conv2D(64, (3, 3), activation='relu'),
@@ -65,7 +65,7 @@ model = keras.Sequential([
         beta_initializer='zeros',
         gamma_initializer='ones'
     ),
-    #KL.Dropout(0.25),
+    KL.Dropout(0.25),
     KL.Conv2D(64, (3, 3), activation='relu'),
     KL.Conv2D(64, (3, 3), activation='relu'),
     KL.Conv2D(64, (3, 3), activation='relu'),
@@ -86,6 +86,7 @@ model = keras.Sequential([
 model.compile(optimizer='adam',
               loss='binary_crossentropy',
               metrics=['accuracy'])
+
 
 start_time = time.time()
 
@@ -133,7 +134,6 @@ plt.show()
 end_time = time.time()
 
 print(f'First Model Time Elapse: {end_time-start_time}s')
-
 
 ######## MODEL 2 SOBEL TRANSFORMED
 
